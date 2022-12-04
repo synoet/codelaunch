@@ -1,0 +1,1 @@
+exec code-server --host 0.0.0.0 --auth "password"
