@@ -1,4 +1,5 @@
 api/node_modules
 api/dist
+api/.env
 ide/test
 infra/node_modules
