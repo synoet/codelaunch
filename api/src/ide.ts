@@ -94,7 +94,7 @@ const createIDEService = async (
       name: name,
     },
     spec: {
-      type: "LoadBalancer",
+      type: "ClusterIP",
       ports: [
         {
           port: 80,

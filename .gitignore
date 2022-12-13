@@ -3,3 +3,4 @@ api/dist
 api/.env
 ide/test
 infra/node_modules
+ide/*.vsix

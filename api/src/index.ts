@@ -24,13 +24,19 @@ app.get("/auth/github", (req, res) => {
 });
 app.get("/auth/callback", (req, res) => callbackHandler(req, res));
 
-app.get("/pod/create/", async (req, res) => {
+app.get("/ide/create/", async (req, res) => {
   let token = req.cookies.minikube_token;
   token = jwt.verify(token, process.env.JWT_SECRET as string);
+  console.log(token)
 
   await initializeIDE(token.id);
   res.status(200).send("IDE initialized");
 });
+
+app.get("/ide", async (req, res) => {
+  let token = req.cookies.minikube_token;
+  token = jwt.verify(token, process.env.JWT_SECRET as string);
+})
 
 app.listen(8000, () => {
   console.log("listening at port 8000");

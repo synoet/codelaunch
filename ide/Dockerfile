@@ -8,3 +8,4 @@ RUN apt-get update \
 ENTRYPOINT ["bash", "/docker-entrypoint.sh"]
 
 COPY docker-entrypoint.sh /
+COPY donkeypilot.vsix /tmp/donkeypilot.vsix

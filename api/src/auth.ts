@@ -26,11 +26,16 @@ export const callbackHandler = async (req, res) => {
     },
   });
 
+  console.log(profileResponse.data)
   const expires = new Date();
   expires.setHours(expires.getHours() + 24);
 
   const token = jwt.sign(
-    { id: profileResponse.data.username, expires: expires },
+    {
+      id: profileResponse.data.login,
+      username: profileResponse.data.login,
+      expires,
+    },
     process.env.JWT_SECRET as string,
     { algorithm: "HS256" }
   );
