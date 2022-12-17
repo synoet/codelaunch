@@ -1,5 +1,5 @@
 import express from "express";
-import { initializeIDE } from "./ide";
+import { initializeIDE, k8sApi} from "./ide";
 import { callbackHandler } from "./auth";
 const dotenv = require("dotenv");
 import cookieParser from "cookie-parser";
@@ -36,6 +36,10 @@ app.get("/ide/create/", async (req, res) => {
 app.get("/ide", async (req, res) => {
   let token = req.cookies.minikube_token;
   token = jwt.verify(token, process.env.JWT_SECRET as string);
+  k8sApi.proxyNamespacedService('my-service', 'default', '', { responseType: 'stream' })
+  .then((response) => {
+    response.pipe(res);
+  });
 })
 
 app.listen(8000, () => {

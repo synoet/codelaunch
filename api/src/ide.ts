@@ -1,10 +1,12 @@
 import * as k8s from "@kubernetes/client-node";
 import type { V1PersistentVolume } from "@kubernetes/client-node";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 
-const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+export const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
 const createIDEPVC = async (
   name: string,
@@ -142,11 +144,25 @@ export const initializeIDE = async (name: string, volumeSize: number = 2) => {
       storageClassName: "standard",
       hostPath: {
         path: `/data/${name}`,
-      }
+      },
     },
-  })
+  });
   const pod = await createIDEPod(podName, volumeName, pvc);
   const service = await createIDEService(serviceName, pod);
+
+  const { spec } = service;
+
+  if (spec) {
+    const clusterIp = spec.clusterIP;
+    if (clusterIp) {
+      prisma.session.create({
+        data: {
+          userId: name,
+          clusterIP: clusterIp,
+        },
+      });
+    }
+  }
 };
 
 export const deletePod = async (podId: string) => {
