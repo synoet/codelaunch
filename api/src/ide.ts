@@ -116,10 +116,10 @@ const createIDEService = async (
 };
 
 export const initializeIDE = async (name: string, volumeSize: number = 2) => {
-  const volumeName = `mc-ide-volume-${name}`;
-  const volumeClaimName = `mc-ide-pvc-${name}`;
-  const podName = `mc-ide-pod-${name}`;
-  const serviceName = `mc-ide-service-${name}`;
+  const volumeName = `cl-ide-volume-${name}`;
+  const volumeClaimName = `cl-ide-pvc-${name}`;
+  const podName = `cl-ide-pod-${name}`;
+  const serviceName = `cl-ide-service-${name}`;
   let { body: pvc }: { body: k8s.V1PersistentVolumeClaim | undefined } =
     await k8sApi
       .readNamespacedPersistentVolumeClaim(volumeClaimName, "default")

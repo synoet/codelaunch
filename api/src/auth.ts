@@ -40,7 +40,7 @@ export const callbackHandler = async (req, res) => {
     { algorithm: "HS256" }
   );
 
-  res.cookie("minikube_token", token);
+  res.cookie("auth_token", token);
   res.send({
     token: token,
   });

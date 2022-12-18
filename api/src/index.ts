@@ -34,12 +34,8 @@ app.get("/ide/create/", async (req, res) => {
 });
 
 app.get("/ide", async (req, res) => {
-  let token = req.cookies.minikube_token;
+  let token = req.cookies.auth_token;
   token = jwt.verify(token, process.env.JWT_SECRET as string);
-  k8sApi.proxyNamespacedService('my-service', 'default', '', { responseType: 'stream' })
-  .then((response) => {
-    response.pipe(res);
-  });
 })
 
 app.listen(8000, () => {

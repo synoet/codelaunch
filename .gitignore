@@ -3,4 +3,6 @@ api/dist
 api/.env
 ide/test
 infra/node_modules
+infra/.env
+infra/kubeconfig.yml
 ide/*.vsix
