@@ -7,6 +7,7 @@ const _ide = require("./ide");
 const _auth = require("./auth");
 const _cookieParser = _interopRequireDefault(require("cookie-parser"));
 const _jsonwebtoken = _interopRequireDefault(require("jsonwebtoken"));
+const _cors = _interopRequireDefault(require("cors"));
 function _interopRequireDefault(obj) {
     return obj && obj.__esModule ? obj : {
         default: obj
@@ -20,6 +21,7 @@ app.use(_express.default.urlencoded({
     extended: true
 }));
 app.use((0, _cookieParser.default)());
+app.use((0, _cors.default)());
 app.get("/", (req, res)=>{
     res.send("Hello World!");
 });
@@ -28,12 +30,39 @@ app.get("/auth/github", (req, res)=>{
     res.redirect(`https://github.com/login/oauth/authorize?client_id=${clientId}&scope=user`);
 });
 app.get("/auth/callback", (req, res)=>(0, _auth.callbackHandler)(req, res));
-app.get("/pod/create/", async (req, res)=>{
-    let token = req.cookies.minikube_token;
+app.get("/auth/whoami", async (req, res)=>{
+    let token = req.cookies.auth_token;
+    if (!token) {
+        return res.status(404).send("unauthorized");
+    }
     token = _jsonwebtoken.default.verify(token, process.env.JWT_SECRET);
-    console.log(token);
-    await (0, _ide.initializeIDE)(token.id);
-    res.status(200).send("IDE initialized");
+    if (!token) {
+        return res.status(404).send("unauthorized");
+    }
+    return res.status(200).send(token);
+});
+app.get("/ide/create", async (req, res)=>{
+    let token = req.cookies.auth_token;
+    token = _jsonwebtoken.default.verify(token, process.env.JWT_SECRET);
+    const ideResponse = await (0, _ide.initializeIDE)(token.id);
+    if (ideResponse.status === "created") {
+        if (ideResponse.clusterIP) {
+            res.cookie("session_token", (0, _auth.createSessionToken)(ideResponse.clusterIP, token.id), {
+                httpOnly: true,
+                domain: ".codelaunch.sh"
+            });
+        }
+    }
+    res.status(200).send(ideResponse.status);
+});
+app.get("/ide/status", async (req, res)=>{
+    let token = req.cookies.auth_token;
+    token = _jsonwebtoken.default.verify(token, process.env.JWT_SECRET);
+    if (!token) {
+        return res.status(404).send("Unauthorized");
+    }
+    const isRunning = await (0, _ide.isIDERunning)(token.id);
+    return res.status(200).send(isRunning);
 });
 app.listen(8000, ()=>{
     console.log("listening at port 8000");

@@ -5,8 +5,8 @@ WORKDIR /app
 
 RUN npm install \
 npm install swc \
-npm run build 
+npm run build
 
-EXPOSE 8080
+EXPOSE 8000
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "proxy"]

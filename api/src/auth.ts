@@ -1,5 +1,6 @@
 import axios from "axios";
 import jwt from "jsonwebtoken";
+import { json } from "stream/consumers";
 export const callbackHandler = async (req, res) => {
   const { code } = req.query;
 
@@ -26,7 +27,6 @@ export const callbackHandler = async (req, res) => {
     },
   });
 
-  console.log(profileResponse.data)
   const expires = new Date();
   expires.setHours(expires.getHours() + 24);
 
@@ -40,8 +40,36 @@ export const callbackHandler = async (req, res) => {
     { algorithm: "HS256" }
   );
 
-  res.cookie("auth_token", token);
-  res.send({
-    token: token,
-  });
+  res.cookie("auth_token", token, { httpOnly: true });
+
+  return res.redirect("http://localhost:3000/");
+};
+
+export const createSessionToken = (clusterIP: string, userId: string) => {
+  const expires = new Date();
+  expires.setHours(expires.getHours() + 6);
+  const token = jwt.sign(
+    {
+      clusterIP: clusterIP,
+      userId: userId,
+      expires,
+    },
+    process.env.JWT_SECRET as string,
+    { algorithm: "HS256" }
+  );
+
+  return token;
+};
+
+export const handleToken = (token: string) => {
+  let data;
+  try {
+    data = jwt.verify(token, process.env.JWT_SECRET as string);
+  } catch (e) {
+    console.log(`Failed to verify jwt: ${e}`);
+  }
+
+  console.log(data);
+
+  return data || null;
 };
