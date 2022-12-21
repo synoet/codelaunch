@@ -42,7 +42,7 @@ export const callbackHandler = async (req, res) => {
 
   res.cookie("auth_token", token, { httpOnly: true });
 
-  return res.redirect("http://localhost:3000/");
+  return res.redirect("http://codelaunch.sh/");
 };
 
 export const createSessionToken = (clusterIP: string, userId: string) => {

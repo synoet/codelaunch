@@ -102,6 +102,76 @@ const apiDeployment = new k8s.apps.v1.Deployment("api-deployment", {
   },
 });
 
+const webDeployment = new k8s.apps.v1.Deployment("web-deployment", {
+  metadata: {
+    name: "web-deployment",
+    namespace: "default",
+    labels: {
+      app: "web",
+    },
+  },
+  spec: {
+    replicas: 1,
+    strategy: {
+      rollingUpdate: {
+        maxSurge: 0,
+      },
+    },
+    selector: {
+      matchLabels: {
+        app: "web",
+      },
+    },
+    template: {
+      metadata: {
+        name: "web-deployment",
+        labels: {
+          app: "web",
+        },
+      },
+      spec: {
+        serviceAccount: "default",
+        containers: [
+          {
+            name: "web",
+            image: "registry.digitalocean.com/codelaunch/cl-web:latest",
+            ports: [
+              {
+                containerPort: 3000,
+                hostPort: 80,
+              },
+            ],
+          },
+        ],
+        imagePullSecrets: [
+          {
+            name: "codelaunch",
+          },
+        ],
+      },
+    },
+  },
+});
+
+const webService = new k8s.core.v1.Service("web-service", {
+  metadata: {
+    name: "web-service",
+    namespace: "default",
+    labels: {
+      app: apiDeployment.metadata.labels.app,
+    },
+  },
+  spec: {
+    type: "NodePort",
+    ports: [{ port: 3000, targetPort: 3000 }],
+    selector: {
+      app: webDeployment.metadata.labels.app,
+    },
+  },
+});
+
+
+
 const apiService = new k8s.core.v1.Service("api-service", {
   metadata: {
     name: "api-service",
@@ -233,6 +303,29 @@ const stripIdePathPrefixMiddleware = new k8s.apiextensions.CustomResource(
   }
 );
 
+const webRouter = new k8s.apiextensions.CustomResource("web-router", {
+  apiVersion: "traefik.containo.us/v1alpha1",
+  kind: "IngressRoute",
+  metadata: {
+    name: "web-router",
+  },
+  spec: {
+    entryPoints: ["web"],
+    routes: [
+      {
+        kind: "Rule",
+        match: "PathPrefix(`/`)",
+        services: [
+          {
+            name: webService.metadata.name,
+            port: 3000,
+          },
+        ],
+      },
+    ],
+  },
+});
+
 const apiRouter = new k8s.apiextensions.CustomResource("api-router", {
   apiVersion: "traefik.containo.us/v1alpha1",
   kind: "IngressRoute",
@@ -288,3 +381,5 @@ const ideProxyRouter = new k8s.apiextensions.CustomResource("proxy-router", {
     ],
   },
 });
+
+

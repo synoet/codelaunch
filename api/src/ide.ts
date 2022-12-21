@@ -35,7 +35,9 @@ const createIDEPVC = async (
   };
 
   const { body: responseVolumeClaim }: { body: k8s.V1PersistentVolumeClaim } =
-    await k8sApi.createNamespacedPersistentVolumeClaim("default", volumeClaim).catch((e) => console.log(e))
+    await k8sApi
+      .createNamespacedPersistentVolumeClaim("default", volumeClaim)
+      .catch((e) => console.log(e));
 
   return responseVolumeClaim;
 };
@@ -89,15 +91,16 @@ const createIDEPod = async (
     },
   };
 
-  const { body: responsePod }: { body: k8s.V1Pod } =
-    await k8sApi.createNamespacedPod("default", pod).catch((e) => console.log(e));
+  const { body: responsePod }: { body: k8s.V1Pod } = await k8sApi
+    .createNamespacedPod("default", pod)
+    .catch((e) => console.log(e));
 
   return responsePod;
 };
 
 const createIDEService = async (
   name: string,
-  pod: k8s.V1Pod
+  podName: string,
 ): Promise<k8s.V1Service> => {
   const service: k8s.V1Service = {
     apiVersion: "v1",
@@ -114,13 +117,16 @@ const createIDEService = async (
         },
       ],
       selector: {
-        app: "cl-ide",
+        name: podName,
       },
     },
   };
 
-  const { body: responseService }: { body: k8s.V1Service } =
-    await k8sApi.createNamespacedService("default", service).catch((e) => {console.log(e)})
+  const { body: responseService }: { body: k8s.V1Service } = await k8sApi
+    .createNamespacedService("default", service)
+    .catch((e) => {
+      console.log(e);
+    });
 
   return responseService;
 };
@@ -134,22 +140,32 @@ export const initializeIDE = async (
   name: string,
   volumeSize: number = 2
 ): Promise<IDEResponse> => {
-  const volumeName = `cl-ide-volume-${name}`;
-  const volumeClaimName = `cl-ide-pvc-${name}`;
-  const podName = `cl-ide-pod-${name}`;
-  const serviceName = `cl-ide-service-${name}`;
+  //setup naming conventions for resrouces
+  const volumeName = `cl-ide-volume-${name.toLowerCase()}`;
+  const volumeClaimName = `cl-ide-pvc-${name.toLowerCase()}`;
+  const podName = `cl-ide-pod-${name.toLowerCase()}`;
+  const serviceName = `cl-ide-service-${name.toLowerCase()}`;
+
+  // read current status of pvc
   let { body: pvc }: { body: k8s.V1PersistentVolumeClaim | undefined } =
-    await k8sApi.readNamespacedPersistentVolumeClaim(
-      volumeClaimName,
-      "default"
-    );
+    await k8sApi
+      .readNamespacedPersistentVolumeClaim(volumeClaimName, "default")
+      .catch((e) => {
+        console.log(`failed to get existing pvc for user: ${name}`);
+        return {
+          body: undefined,
+        } as any;
+      });
 
   if (!pvc) {
     try {
-      pvc = await createIDEPVC(volumeClaimName, volumeName, volumeSize);
+      console.log(`creating new persistentvolume and pvc for user: ${name}`);
       await k8sApi.createPersistentVolume({
         metadata: {
           name: volumeName,
+          labels: {
+            app: 'ide'
+          }
         },
         spec: {
           capacity: {
@@ -163,15 +179,22 @@ export const initializeIDE = async (
         },
       });
     } catch (e) {
-      console.log(e);
+      console.log(`failed to create pvc for user ${name}`);
+      console.error(e);
       return {
         status: "failed",
       };
     }
+    pvc = await createIDEPVC(volumeClaimName, volumeName, volumeSize);
   }
 
   let { body: pod }: { body: k8s.V1Pod | undefined } =
-    await k8sApi.readNamespacedPod(podName, "default");
+    await k8sApi.readNamespacedPod(podName, "default").catch((e) => {
+      console.log(`failed to get existing ide-pod for user ${name}`)
+      return {
+        body: undefined,
+      }
+    })
 
   if (pod) {
     return {
@@ -181,7 +204,7 @@ export const initializeIDE = async (
 
   if (!pod) {
     pod = await createIDEPod(podName, volumeName, pvc);
-    const service = await createIDEService(serviceName, pod);
+    const service = await createIDEService(serviceName, podName);
 
     const { spec } = service;
 
@@ -199,13 +222,14 @@ export const initializeIDE = async (
 };
 
 export const isIDERunning = async (id: string): Promise<boolean> => {
-  let { body: pod }: { body: k8s.V1Pod | undefined } =
-    await k8sApi.readNamespacedPod(`cl-ide-pod-${id}`, "default").catch((e) => {
-      console.log(e)
+  let { body: pod }: { body: k8s.V1Pod | undefined } = await k8sApi
+    .readNamespacedPod(`cl-ide-pod-${id}`, "default")
+    .catch((e) => {
+      console.log(e);
       return {
         body: undefined,
       } as any;
-    })
+    });
 
   return !!pod;
 };

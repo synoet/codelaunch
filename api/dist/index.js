@@ -45,7 +45,7 @@ app.get("/ide/create", async (req, res)=>{
     let token = req.cookies.auth_token;
     token = _jsonwebtoken.default.verify(token, process.env.JWT_SECRET);
     const ideResponse = await (0, _ide.initializeIDE)(token.id);
-    if (ideResponse.status === "created") {
+    if (ideResponse.status === "created" || ideResponse.status === "running") {
         if (ideResponse.clusterIP) {
             res.cookie("session_token", (0, _auth.createSessionToken)(ideResponse.clusterIP, token.id), {
                 httpOnly: true,

@@ -48,7 +48,7 @@ app.get("/ide/create", async (req, res) => {
 
   const ideResponse = await initializeIDE(token.id);
 
-  if (ideResponse.status === "created") {
+  if (ideResponse.status === "created" || ideResponse.status === "running") {
     if (ideResponse.clusterIP) {
       res.cookie(
         "session_token",
