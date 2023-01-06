@@ -1,9 +1,11 @@
-api/node_modules
-api/dist
-api/.env
-ide/test
-infra/node_modules
-infra/.env
-infra/kubeconfig.yml
-ide/*.vsix
-web/node_modules
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+**/node_modules
+**/.env
+**/kubeconfig.yml
+**/dist
+**/dist
+**/build
+**/*.vsix
+**/.DS_Store
+.turbo

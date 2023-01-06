@@ -1,12 +1,12 @@
 import httpProxy from "http-proxy";
 import internal from "stream";
 import Cookie from "universal-cookie";
-import { handleToken } from "./auth";
+import { handleToken } from "./utils";
 import { JwtPayload } from "jsonwebtoken";
 import http, { ServerResponse, IncomingMessage } from "http";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 
-dotenv.config()
+dotenv.config();
 
 const proxy = httpProxy.createProxyServer({
   ws: true,
@@ -17,9 +17,10 @@ const proxy = httpProxy.createProxyServer({
  * @param req
  * @returns
  */
-const parseRequest = (req: IncomingMessage): { token: JwtPayload } => {
+const parseRequestToken = (
+  req: IncomingMessage
+): { token: JwtPayload | null } => {
   const cookies = new Cookie(req.headers.cookie);
-  let token: JwtPayload;
 
   return { token: handleToken(cookies.get("session_token")) };
 };
@@ -44,7 +45,7 @@ const unauthorized = (
  */
 const proxyServer = http.createServer(
   (req: IncomingMessage, res: ServerResponse) => {
-    const { token } = parseRequest(req);
+    const { token } = parseRequestToken(req);
 
     if (!token) {
       return unauthorized(res);
@@ -60,7 +61,7 @@ const proxyServer = http.createServer(
 );
 
 proxyServer.on("upgrade", (req: IncomingMessage, socket: internal.Duplex) => {
-  const { token } = parseRequest(req);
+  const { token } = parseRequestToken(req);
 
   if (!token) {
     return null;
@@ -74,4 +75,6 @@ proxyServer.on("upgrade", (req: IncomingMessage, socket: internal.Duplex) => {
   });
 });
 
-proxyServer.listen(8000);
+proxyServer.listen(8000, () => {
+  console.log("proxy listening on port 8000");
+});

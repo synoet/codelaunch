@@ -158,7 +158,7 @@ const webService = new k8s.core.v1.Service("web-service", {
     name: "web-service",
     namespace: "default",
     labels: {
-      app: apiDeployment.metadata.labels.app,
+      app: webDeployment.metadata.labels.app,
     },
   },
   spec: {
